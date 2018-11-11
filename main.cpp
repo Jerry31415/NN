@@ -102,7 +102,7 @@ int main(){
 		train.W[i]=(double)(1.)/(1+rand()%10000); 
 	}
 
-	train.solve(4, train.W);
+	//train.solve(4, train.W);
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();

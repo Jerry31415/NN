@@ -22,43 +22,87 @@ void Conv(const Mat& src, const Mat& kernel, Mat& dst){
 }
 
 void Conv(const Mat& src, const std::vector<double>& kernel, Mat& dst, int ker_size, int ker_pos, bool useBias){
+	#ifdef Debug
 	if (dst.size != src.size){
 		dst = Mat::zeros(src.size(), CV_64FC1);
 	}
-	int R((ker_size-1)/2), xx, yy;
+	#endif
+	int R((ker_size-1)/2), kInd;
 	double conv_res;
-	for (int i = 0; i < dst.rows; ++i){
-		for (int j = 0; j < dst.cols; ++j){
-			conv_res = 0;
-			for (int y(-R), kInd(0); y <= R; ++y){
-				yy = i + y;
-				if (yy < 0 || yy >= src.rows) continue;
-				for (int x = -R; x <= R; ++x){
-					xx = j + x;
-					if (xx < 0 || xx >= src.cols) continue;
-					conv_res += src.at<double>(yy, xx)*kernel[kInd + ker_pos];
-					++kInd;
+	if (useBias){
+		for (int i = 0; i < dst.rows; ++i){
+			for (int j = 0; j < dst.cols; ++j){
+				conv_res = 0;
+				kInd = ker_pos;
+				if ((-R + i) >= 0 && (R + i) < src.rows){
+					for (int y(-R + i); y <= (R + i); ++y){
+						if ((-R + j) >= 0 && R + j < src.cols){
+							for (int x(-R + j); x <= (R + j); ++x){
+								conv_res += src.at<double>(y, x)*kernel[kInd++];
+							}
+						}
+						else{
+							for (int x(-R + j); x <= (R + j); ++x){
+								if (x < 0 || x >= src.cols) continue;
+								conv_res += src.at<double>(y, x)*kernel[kInd++];
+							}
+						}
+					}
 				}
+				else{
+					for (int y(-R + i); y <= (R + i); ++y){
+						if (y < 0 || y >= src.rows) continue;
+						if ((-R + j) >= 0 && R + j < src.cols){
+							for (int x(-R + j); x <= (R + j); ++x){
+								conv_res += src.at<double>(y, x)*kernel[kInd++];
+							}
+						}
+						else{
+							for (int x(-R + j); x <= (R + j); ++x){
+								if (x < 0 || x >= src.cols) continue;
+								conv_res += src.at<double>(y, x)*kernel[kInd++];
+							}
+						}
+					}
+				}
+				conv_res += kernel[kInd];
+				dst.at<double>(i, j) = conv_res;
 			}
-			if (useBias) conv_res += kernel[ker_size + ker_pos];
-			dst.at<double>(i, j) = conv_res;
+		}
+	}
+	else {
+		for (int i = 0; i < dst.rows; ++i){
+			for (int j = 0; j < dst.cols; ++j){
+				conv_res = 0;
+				for (int y(-R + i), kInd(ker_pos); y <= (R + i); ++y){
+					if (y < 0 || y >= src.rows) continue;
+					for (int x(-R + j); x <= (R + j); ++x){
+						if (x < 0 || x >= src.cols) continue;
+						conv_res += src.at<double>(y, x)*kernel[kInd++];
+					}
+				}
+				dst.at<double>(i, j) = conv_res;
+			}
 		}
 	}
 }
 
 void MaxPooling(const Mat& src, Mat& dst, int R, int stride){
-	Size s((src.rows - R) / stride + 1, ((src.cols - R) / stride + 1));
 	double max, tmp;
+	#ifdef Debug
+	Size s((src.rows - R) / stride + 1, ((src.cols - R) / stride + 1));
 	if (dst.size() != s){
 		dst = Mat::zeros(s, CV_64FC1);
 	}
+	#endif
+	int RM1(R - 1), ii, jj;
 	for (int i(0), y(0); i < src.rows; i += stride, ++y){
-		if (i + R >= src.rows + 1) break;
+		if (i + RM1 >= src.rows) break;
 		for (int j(0), x(0); j < src.cols; j += stride, ++x){
-			if (j + R >= src.cols + 1) break;
+			if (j + RM1 >= src.cols) break;
 			max = -9999999;
-			for (int ii = i; ii < i + R; ++ii){
-				for (int jj = j; jj < j + R; ++jj){
+			for (ii = i; ii < i + R; ++ii){
+				for (jj = j; jj < j + R; ++jj){
 					if ((tmp=src.at<double>(ii, jj))>max) max = tmp;
 				}
 			}
