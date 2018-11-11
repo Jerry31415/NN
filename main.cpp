@@ -81,6 +81,7 @@ void Labels2Vec(std::vector<uchar> src, std::vector<std::vector<double>>& dst, i
 	}
 }
 
+
 int main(){
 	std::vector<cnn_layer> Layers;
 	initCNN_layers(Layers);
@@ -100,6 +101,8 @@ int main(){
 	for (int i = 0; i < train.W.size(); ++i){
 		train.W[i]=(double)(1.)/(1+rand()%10000); 
 	}
+
+	train.solve(4, train.W);
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();

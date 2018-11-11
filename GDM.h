@@ -37,11 +37,24 @@ public:
 		return (S1 - S0) / (2.*eps);
 	}
 
+	// Возвращает численную аппроксимацию первой 
+	// частной производной функции S по аргументу с номером k
+	double dS_arg_kO(std::vector<double>& arg, int k, double SAarg){
+		double S0;
+		arg[k] -= 1;
+		S0 = S(arg);
+		arg[k] += 1;
+		return (SAarg - S0);
+	}
+
 	// Возвращет в dst вектор-градиент функции S(arg)
 	void gradient(std::vector<double>& arg, Mat& dst, double eps = 0.001){
 		dst = Mat::zeros(arg.size(), 1, CV_64FC1);
+		double SArg = S(arg);
+		std::cout << "SArg - ok\n";
 		for (int k = 0; k < arg.size(); ++k){
-			dst.at<double>(k, 0) = dS_arg_k(arg, k, eps);
+			dst.at<double>(k, 0) = dS_arg_kO(arg, k, SArg);
+			std::cout << (k + 1) << " / " << arg.size() << "\n";
 		}
 	}
 
