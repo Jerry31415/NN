@@ -50,11 +50,11 @@ public:
 	// Возвращет в dst вектор-градиент функции S(arg)
 	void gradient(std::vector<double>& arg, Mat& dst, double eps = 0.001){
 		dst = Mat::zeros(arg.size(), 1, CV_64FC1);
-		double SArg = S(arg);
-		std::cout << "SArg - ok\n";
+		//double SArg = S(arg);
+		//std::cout << "SArg - ok\n";
 		for (int k = 0; k < arg.size(); ++k){
-			dst.at<double>(k, 0) = dS_arg_kO(arg, k, SArg);
-			std::cout << (k + 1) << " / " << arg.size() << "\n";
+			dst.at<double>(k, 0) = dS_arg_k(arg, k, eps);
+			//std::cout << (k + 1) << " / " << arg.size() << "\n";
 		}
 	}
 
@@ -81,23 +81,42 @@ public:
 		bool shake = false;
 		do{
 			S0 = S(dst);
-			gradient(dst, G, eps);
+			if (!shake)	gradient(dst, G, eps);
 			double GD = dist(G);
 			if (GD < 0.00005) {
-				if(shake) break;
+				break;
+			}
+			G *= (1 / (GD));
+			double lambda = 1;
+			while (true){
+				std::vector<double> tmp(dst.size(), 0);
+				for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - (lambda - 1)*G.at<double>(z, 0);
+				double SvalM1 = S(tmp);
+				for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - (lambda + 1)*G.at<double>(z, 0);
+				double SvalP1 = S(tmp);
+				for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - lambda*G.at<double>(z, 0);
+				double Sval = S(tmp);
+				double dS_dL = Sval - SvalM1;
+				double d2S_dL = SvalM1 + SvalP1 - 2 * Sval;
+				if (abs(d2S_dL) < 0.000001 || abs(dS_dL) < 0.000001) break;
+				lambda = lambda - dS_dL / d2S_dL;
+				break;
+			}
+			for (int z = 0; z < dst.size(); ++z) dst[z] = dst[z] - lambda*G.at<double>(z, 0);
+			S1 = S(dst);
+			//if (S1 >= S0) return;
+			/*if (abs(S1 - S0) < 0.00005){
+				if (shake) break;
 				else {
 					shake = true;
-					for (int i = 0; i < G.rows; ++i) G.at <double>(i, 0) += 0.1;
-					GD = dist(G);
-					//continue;
+					for (int i = 0; i < G.rows; ++i) G.at<double>(i, 0) += (rand()%2)?-0.1:0.1;
+					continue;
 				}
-			}
-			for (int z = 0; z < dst.size(); ++z) dst[z] = dst[z] - (1. / GD)*G.at<double>(z, 0);
-			S1 = S(dst);
-		/*	if (S1>S0){
-				for (int z = 0; z < dst.size(); ++z) dst[z] = dst[z] + (1. / GD)*G.at<double>(z, 0);
-				return;
 			}*/
+			//if (S1>S0){
+			//	for (int z = 0; z < dst.size(); ++z) dst[z] = dst[z] + (1. / GD)*G.at<double>(z, 0);
+			//	return;
+			//}
 			++cnt;
 		} while (cnt<itter);
 	}

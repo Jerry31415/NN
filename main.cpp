@@ -80,9 +80,36 @@ void Labels2Vec(std::vector<uchar> src, std::vector<std::vector<double>>& dst, i
 		dst.push_back(tmp);
 	}
 }
+/*
+z = 2*x*x-x*y+y*y-7*x+6*y-2
+z(8/7;-17/7) = -93/7
+z(1.143, -2.4286) -13.286
+*/
 
+class TestGDM : public GDM{
+public:
+
+	TestGDM(){
+		init(2);
+	}
+
+	double S(std::vector<double>& arg){
+		return 2 * arg[0] * arg[0] - arg[0] * arg[1] + arg[1] * arg[1] - 7 * arg[0] + 6 * arg[1] - 2;
+	}
+};
 
 int main(){
+
+	TestGDM test_gdm;
+	std::vector<double> dst = {1.2,-2.5};
+	while (true){
+		std::cout << dst[0] << " " << dst[1] << " " << test_gdm.S(dst) << "\n";
+
+		test_gdm.solve(1, dst, true);
+		std::cout << dst[0] << " " << dst[1] << " " << test_gdm.S(dst) << "\n";
+		std::cin.get();
+	}
+
 	std::vector<cnn_layer> Layers;
 	initCNN_layers(Layers);
 
