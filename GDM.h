@@ -82,26 +82,45 @@ public:
 		do{
 			S0 = S(dst);
 			if (!shake)	gradient(dst, G, eps);
+
+			//std::cout << "G=" << G << "\n";
+
 			double GD = dist(G);
 			if (GD < 0.00005) {
 				break;
 			}
 			G *= (1 / (GD));
-			double lambda = 1;
-			while (true){
-				std::vector<double> tmp(dst.size(), 0);
-				for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - (lambda - 1)*G.at<double>(z, 0);
-				double SvalM1 = S(tmp);
-				for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - (lambda + 1)*G.at<double>(z, 0);
-				double SvalP1 = S(tmp);
-				for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - lambda*G.at<double>(z, 0);
-				double Sval = S(tmp);
-				double dS_dL = Sval - SvalM1;
-				double d2S_dL = SvalM1 + SvalP1 - 2 * Sval;
-				if (abs(d2S_dL) < 0.000001 || abs(dS_dL) < 0.000001) break;
-				lambda = lambda - dS_dL / d2S_dL;
-				break;
+
+		//	std::cout << "NG=" << G << "\n";
+
+			double lambda = 0;
+			
+			std::vector<double> tmp(dst.size(), 0);
+			for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] + G.at<double>(z, 0);
+			double SvalM1 = S(tmp);
+			for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z] - G.at<double>(z, 0);
+			double SvalP1 = S(tmp);
+			for (int z = 0; z < dst.size(); ++z) tmp[z] = dst[z];
+			double Sval = S(tmp);
+				
+		
+			if (Sval>SvalM1 && Sval>SvalP1){
+				if (SvalM1 < SvalP1) lambda = -1;
+				else lambda = 1;
 			}
+			else {
+				double den = 2 * (2 * Sval - SvalM1 - SvalP1);
+				if (abs(den) < 0.000001){
+					if (Sval <= SvalM1 && Sval <= SvalP1) lambda = 0;
+					else if (SvalM1 <= Sval && SvalM1 <= SvalP1) lambda = -1;
+					else if (SvalP1 <= Sval && SvalP1 <= SvalM1) lambda = 1;
+					else {
+						std::cout << "Error\n";
+					}
+				}
+				else lambda = (SvalP1 - SvalM1) / den;
+			}
+
 			for (int z = 0; z < dst.size(); ++z) dst[z] = dst[z] - lambda*G.at<double>(z, 0);
 			S1 = S(dst);
 			//if (S1 >= S0) return;
