@@ -2,6 +2,8 @@
 
 using namespace cv;
 
+ReLU relu_function;
+
 template<typename T>
 std::string toString(const T& val){
 	std::stringstream ss;
@@ -19,6 +21,9 @@ MLP::MLP(const std::vector<int>& layers_size){
 	LS.resize(layers_size.size());
 	std::copy(layers_size.begin(), layers_size.end(), LS.begin());
 	w.resize(weightsNumber(), 0);
+	int r_size = 0;
+	for (int i = 0; i < layers_size.size(); ++i) r_size += layers_size[i];
+	r.resize(r_size, 0);
 }
 
 int MLP::weightsNumber(){
@@ -38,11 +43,12 @@ int MLP::neuronNumber(){
 }
 
 void MLP::get(const std::vector<double>& arg, std::vector<double>& dst){
+	#ifdef Debug
 	if (arg.size() != LS[0]) {
 		std::cerr << "Error:arg.size!=L0.size. Incorrect arguments number\n";
 		return;
 	}
-	std::vector<double> r;
+	#endif
 	r.resize(arg.size(), 0);
 	std::copy(arg.begin(), arg.end(), r.begin());
 	int wInd(0), rInd(0);
@@ -64,12 +70,13 @@ void MLP::get(const std::vector<double>& arg, std::vector<double>& dst){
 	if (dst.size() != LS[LS.size() - 1]) throw std::runtime_error("Error: dst.size() != LS[LS.size() - 1]");
 }
 
-void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const std::function<double(double)>& activation_func){
+void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const Function& activation_func){
+	#ifdef Debug
 	if (arg.size() != LS[0]) {
 		std::cerr << "Error:arg.size!=L0.size. Incorrect arguments number\n";
 		return;
 	}
-	std::vector<double> r;
+	#endif
 	r.resize(arg.size(), 0);
 	std::copy(arg.begin(), arg.end(), r.begin());
 	int wInd(0), rInd(0);
@@ -81,7 +88,7 @@ void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const s
 			}
 			sum += w[wInd + LS[k - 1]];
 			wInd += LS[k - 1] + 1;
-			r.push_back(activation_func(sum));
+			r.push_back(activation_func.get(sum));
 		}
 		rInd += LS[k - 1];
 	}
@@ -90,17 +97,18 @@ void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const s
 	}
 }
 
+
 void MLP::getA_ReLU(const std::vector<double>& arg, std::vector<double>& dst){
-	getA(arg, dst, [](const double& v){return (v < 0) ? 0 : v; });
+	getA(arg, dst, relu_function);
 }
 
 void MLP::get(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W){
+	#ifdef Debug
 	if (arg.size() != LS[0]) {
 		std::cerr << "Error:arg.size!=L0.size. Incorrect arguments number\n";
 		return;
 	}
-	std::vector<double> r;
-	r.resize(arg.size(), 0);
+	#endif
 	std::copy(arg.begin(), arg.end(), r.begin());
 	int wInd(0), rInd(0);
 	for (size_t k = 1; k < LS.size(); ++k){
@@ -121,12 +129,13 @@ void MLP::get(const std::vector<double>& arg, std::vector<double>& dst, const st
 	if (dst.size() != LS[LS.size() - 1]) throw std::runtime_error("Error: dst.size() != LS[LS.size() - 1]");
 }
 
-void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W, const std::function<double(double)>& activation_func){
+void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W, const Function& activation_func){
+	#ifdef Debug
 	if (arg.size() != LS[0]) {
 		std::cerr << "Error:arg.size!=L0.size. Incorrect arguments number\n";
 		return;
 	}
-	std::vector<double> r;
+	#endif
 	r.resize(arg.size(), 0);
 	std::copy(arg.begin(), arg.end(), r.begin());
 	int wInd(0), rInd(0);
@@ -138,7 +147,7 @@ void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const s
 			}
 			sum += W[wInd + LS[k - 1]];
 			wInd += LS[k - 1] + 1;
-			r.push_back(activation_func(sum));
+			r.push_back(activation_func.get(sum));
 		}
 		rInd += LS[k - 1];
 	}
@@ -151,7 +160,7 @@ void MLP::getA(const std::vector<double>& arg, std::vector<double>& dst, const s
 }
 
 void MLP::getA_ReLU(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W){
-	getA(arg, dst, W, [](const double& v){return (v < 0) ? 0 : v; });
+	getA(arg, dst, W, relu_function);
 }
 
 void MLP::SaveImage(const std::string& name, Size size){
@@ -187,8 +196,6 @@ void MLP::SaveImage(const std::string& name, Size size){
 			circle(im, pc, 3, color, 6);
 		}
 	}
-
-
 	putText(im, "Hidden layers: "+toString(LS.size()-2), Point2i(5,20), FONT_HERSHEY_PLAIN, 1, Scalar(128,255,128));
 	putText(im, "Input: " + toString(LS[0]), Point2i(5, 35), FONT_HERSHEY_PLAIN, 1, Scalar(128, 255, 128));
 	putText(im, "Output: " + toString(LS.back()), Point2i(5, 50), FONT_HERSHEY_PLAIN, 1, Scalar(128, 255, 128));

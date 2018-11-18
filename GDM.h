@@ -54,8 +54,9 @@ public:
 		//std::cout << "SArg - ok\n";
 		for (int k = 0; k < arg.size(); ++k){
 			dst.at<double>(k, 0) = dS_arg_k(arg, k, eps);
-			//std::cout << (k + 1) << " / " << arg.size() << "\n";
+			if((k+1)%100==0) std::cout << (k + 1) << " / " << arg.size() << "\r";
 		}
+		std::cout << "\n";
 	}
 
 	// Производит itter иттераций метода Ньютона для минимизации S.

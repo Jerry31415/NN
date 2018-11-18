@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include "Function.h"
 #include <opencv2\imgproc\imgproc.hpp>
 #include <opencv2\imgcodecs\imgcodecs.hpp>
 #include <opencv2\core\core.hpp>
@@ -10,23 +11,26 @@
 void Softmax(std::vector<double>& v);
 
 class MLP{
+	std::vector<double> r;
 public:
 	std::vector<int> LS;
 	std::vector<double> w;
+
 	MLP(){}
 	MLP(const std::vector<int>& layers_size);
 	int weightsNumber();
 	int neuronNumber();
 
 	void get(const std::vector<double>& arg, std::vector<double>& dst);
-	void getA(const std::vector<double>& arg, std::vector<double>& dst, const std::function<double(double)>& activation_func);
-	void getA_ReLU(const std::vector<double>& arg, std::vector<double>& dst);
 	void get(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W);
-	void getA(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W, const std::function<double(double)>& activation_func);
+
+	void getA(const std::vector<double>& arg, std::vector<double>& dst, const Function& activation_func);
+	void getA(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W, const Function& activation_func);
+
+	void getA_ReLU(const std::vector<double>& arg, std::vector<double>& dst);
 	void getA_ReLU(const std::vector<double>& arg, std::vector<double>& dst, const std::vector<double>& W);
-
+	
 	void SaveImage(const std::string& name, cv::Size size = cv::Size(1000, 1000));
-
 };
 
 

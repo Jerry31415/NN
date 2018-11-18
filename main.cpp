@@ -86,42 +86,28 @@ z(8/7;-17/7) = -93/7
 z(1.143, -2.4286) -13.286
 */
 
-class TestGDM : public GDM{
-public:
-
-	TestGDM(){
-		init(2);
-	}
-
-	double S(std::vector<double>& arg){
-		return 2 * arg[0] * arg[0] - arg[0] * arg[1] + arg[1] * arg[1] - 7 * arg[0] + 6 * arg[1] - 2;
-	}
-};
 
 int main(){
-
-	TestGDM test_gdm;
-	std::vector<double> dst = {1.2,-2.5};
-	while (true){
-		std::cout << dst[0] << " " << dst[1] << " " << test_gdm.S(dst) << "\n";
-
-		test_gdm.solve(1, dst, true);
-		std::cout << dst[0] << " " << dst[1] << " " << test_gdm.S(dst) << "\n";
-		std::cin.get();
-	}
-
 	std::vector<cnn_layer> Layers;
 	initCNN_layers(Layers);
 
 	std::vector<double> result;
 
-	TrainNet train(Layers, { 128, 32, 10 });
+	TrainNet train(Layers, { 28*28, 10 }, 100);
 
 	// загружаем элементы обучающей выборки
 	std::vector<uchar> labels;
-	ReadLabels("t10k-labels.idx1-ubyte", labels);
+	ReadLabels("train-labels.idx1-ubyte", labels);
 	Labels2Vec(labels, train.true_vectors);
-	ReadImages("t10k-images.idx3-ubyte", train.images, CV_64FC1);
+	ReadImages("train-images.idx3-ubyte", train.images, CV_64FC1);
+
+
+	std::vector<uchar> test_labels;
+	std::vector<Mat> test_images;
+	ReadLabels("t10k-labels.idx1-ubyte", test_labels);
+	ReadImages("t10k-images.idx3-ubyte", test_images, CV_64FC1);
+
+
 
 	std::cout << "init - ok\n";
 
@@ -129,14 +115,18 @@ int main(){
 		train.W[i]=(double)(1.)/(1+rand()%10000); 
 	}
 
-	//train.solve(4, train.W);
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
-	std::cout << train.S(train.W) << "\n";
-	end = std::chrono::system_clock::now();
-	int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
-	std::cout << elapsed_seconds << "s\n";
+	while (true){
+		train.NextBatch();
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+		start = std::chrono::system_clock::now();
+		//for (int i = 0; i < 2; ++i){
+			std::cout << "Accuracy=" << train.Accuracy(test_labels, test_images) << "\n";
+			train.solve(1, train.W, true);
+		//}
+		end = std::chrono::system_clock::now();
+		int elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+		std::cout << elapsed_seconds << "s\n";
+	}
 
 	std::cin.get();
 }
